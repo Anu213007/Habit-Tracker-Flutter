@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum MoodType {
   happy,
@@ -30,7 +30,7 @@ class MoodModel {
         (e) => e.toString() == 'MoodType.${map['mood']}',
         orElse: () => MoodType.neutral,
       ),
-      date: (map['date'] as Timestamp).toDate(),
+      date: _parseDate(map['date']),
       notes: map['notes'],
     );
   }
@@ -39,9 +39,28 @@ class MoodModel {
     return {
       'userId': userId,
       'mood': mood.toString().split('.').last,
-      'date': Timestamp.fromDate(date),
+      'date': date.toIso8601String(),
       'notes': notes,
     };
+  }
+
+  static DateTime _parseDate(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is DateTime) return value;
+    if (value is String) {
+      try {
+        return DateTime.parse(value);
+      } catch (_) {
+        // Fallback if stored as milliseconds string
+        final millis = int.tryParse(value);
+        if (millis != null) return DateTime.fromMillisecondsSinceEpoch(millis);
+      }
+    }
+    if (value is int) {
+      return DateTime.fromMillisecondsSinceEpoch(value);
+    }
+    // As a last resort, use now
+    return DateTime.now();
   }
 
   MoodModel copyWith({
