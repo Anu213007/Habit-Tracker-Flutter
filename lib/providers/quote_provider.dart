@@ -9,34 +9,107 @@ class QuoteProvider extends ChangeNotifier {
   List<QuoteModel> _favoriteQuotes = [];
   bool _isLoading = false;
   bool _isLoadingFavorites = false;
+  bool _hasNetworkError = false;
 
   List<QuoteModel> get quotes => _quotes;
   List<QuoteModel> get favoriteQuotes => _favoriteQuotes;
   bool get isLoading => _isLoading;
   bool get isLoadingFavorites => _isLoadingFavorites;
+  bool get hasNetworkError => _hasNetworkError;
+
+  /// Fallback quotes when API is unavailable
+  static const List<Map<String, String>> _fallbackQuotes = [
+    {
+      'text': 'The journey of a thousand miles begins with one step.',
+      'author': 'Lao Tzu',
+      'category': 'Motivation'
+    },
+    {
+      'text': 'Success is not final, failure is not fatal: it is the courage to continue that counts.',
+      'author': 'Winston Churchill',
+      'category': 'Success'
+    },
+    {
+      'text': 'The only way to do great work is to love what you do.',
+      'author': 'Steve Jobs',
+      'category': 'Passion'
+    },
+    {
+      'text': 'Believe you can and you\'re halfway there.',
+      'author': 'Theodore Roosevelt',
+      'category': 'Belief'
+    },
+    {
+      'text': 'It always seems impossible until it\'s done.',
+      'author': 'Nelson Mandela',
+      'category': 'Perseverance'
+    },
+    {
+      'text': 'The future belongs to those who believe in the beauty of their dreams.',
+      'author': 'Eleanor Roosevelt',
+      'category': 'Dreams'
+    },
+    {
+      'text': 'Don\'t watch the clock; do what it does. Keep going.',
+      'author': 'Sam Levenson',
+      'category': 'Persistence'
+    },
+    {
+      'text': 'The only limit to our realization of tomorrow is our doubts of today.',
+      'author': 'Franklin D. Roosevelt',
+      'category': 'Optimism'
+    },
+    {
+      'text': 'What you get by achieving your goals is not as important as what you become by achieving your goals.',
+      'author': 'Zig Ziglar',
+      'category': 'Growth'
+    },
+    {
+      'text': 'The best way to predict the future is to create it.',
+      'author': 'Peter Drucker',
+      'category': 'Action'
+    }
+  ];
 
   /// Fetch quotes from online API
   Future<void> fetchQuotes() async {
     _isLoading = true;
+    _hasNetworkError = false;
     notifyListeners();
 
     try {
-      final response = await http.get(Uri.parse('https://api.quotable.io/quotes?limit=20'));
+      final response = await http.get(
+        Uri.parse('https://api.quotable.io/quotes?limit=20'),
+        headers: {'User-Agent': 'HabitTracker/1.0'},
+      ).timeout(const Duration(seconds: 10));
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final List<dynamic> results = data['results'];
         _quotes = results.map((item) => QuoteModel.fromApi(item)).toList();
+        debugPrint('✅ Fetched ${_quotes.length} quotes from API');
       } else {
-        _quotes = [];
-        debugPrint('Failed to fetch quotes: ${response.statusCode}');
+        _useFallbackQuotes();
+        debugPrint('⚠️ API returned ${response.statusCode}, using fallback quotes');
       }
     } catch (e) {
-      _quotes = [];
-      debugPrint('Error fetching quotes: $e');
+      _useFallbackQuotes();
+      _hasNetworkError = true;
+      debugPrint('❌ Network error: $e, using fallback quotes');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Use fallback quotes when API fails
+  void _useFallbackQuotes() {
+    _quotes = _fallbackQuotes.map((item) => QuoteModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      text: item['text']!,
+      author: item['author']!,
+      category: item['category'],
+    )).toList();
   }
 
   /// Load favorite quotes for a specific user
@@ -51,7 +124,10 @@ class QuoteProvider extends ChangeNotifier {
 
       if (storedFavorites != null) {
         _favoriteQuotes = storedFavorites
-            .map((jsonStr) => QuoteModel.fromMap(jsonDecode(jsonStr)))
+            .map((jsonStr) {
+              final Map<String, dynamic> map = jsonDecode(jsonStr);
+              return QuoteModel.fromMap(map, map['id'] ?? '');
+            })
             .toList();
       } else {
         _favoriteQuotes = [];
