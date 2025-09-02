@@ -10,18 +10,25 @@ class AuthProvider extends ChangeNotifier {
   bool _isAuthenticated = false;
 
   UserModel? get user => _user;
-
   bool get isLoading => _isLoading;
-
   bool get isAuthenticated => _isAuthenticated;
 
   AuthProvider() {
-    checkAuthState();
+    _initializeAuth();
+  }
+
+  Future<void> _initializeAuth() async {
+    _isLoading = true;
+    notifyListeners();
+    await checkAuthState();
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<void> checkAuthState() async {
     final prefs = await SharedPreferences.getInstance();
-    final String? userDataString = prefs.getString('currentUser');
+    final bool rememberMe = prefs.getBool('rememberMe') ?? true;
+    final String? userDataString = rememberMe ? prefs.getString('currentUser') : null;
 
     if (userDataString != null) {
       try {
@@ -32,7 +39,13 @@ class AuthProvider extends ChangeNotifier {
       } catch (e) {
         print('❌ Error parsing saved user data: $e');
         await prefs.remove('currentUser');
+        _user = null;
+        _isAuthenticated = false;
       }
+      notifyListeners();
+    } else {
+      _user = null;
+      _isAuthenticated = false;
       notifyListeners();
     }
   }
@@ -52,22 +65,15 @@ class AuthProvider extends ChangeNotifier {
 
       final prefs = await SharedPreferences.getInstance();
 
-      // Check if user already exists
       final String? allUsersString = prefs.getString('allUsers');
       Map<String, dynamic> allUsers = {};
       if (allUsersString != null) {
         allUsers = Map<String, dynamic>.from(json.decode(allUsersString));
       }
 
-      if (allUsers.containsKey(email)) {
-        throw Exception('email-already-in-use');
-      }
+      if (allUsers.containsKey(email)) throw Exception('email-already-in-use');
 
-      // Create new user
-      final String userId = DateTime
-          .now()
-          .millisecondsSinceEpoch
-          .toString();
+      final String userId = DateTime.now().millisecondsSinceEpoch.toString();
       final newUser = UserModel(
         id: userId,
         displayName: displayName,
@@ -79,22 +85,16 @@ class AuthProvider extends ChangeNotifier {
         lastLoginAt: DateTime.now(),
       );
 
-      // Save to all users list
       allUsers[email] = newUser.toMap();
       await prefs.setString('allUsers', json.encode(allUsers));
 
-      // Save password (plain text for demo - NOT secure!)
-      final userPasswords = Map<String, String>.from(
-          json.decode(prefs.getString('userPasswords') ?? '{}'));
+      final userPasswords = Map<String, String>.from(json.decode(prefs.getString('userPasswords') ?? '{}'));
       userPasswords[email] = password;
       await prefs.setString('userPasswords', json.encode(userPasswords));
 
-      // Set as current user
       await prefs.setString('currentUser', json.encode(newUser.toMap()));
       _user = newUser;
       _isAuthenticated = true;
-
-      print('🎉 LOCAL Registration completed successfully!');
 
       Fluttertoast.showToast(
         msg: 'Welcome to Habit Tracker! 🌸',
@@ -129,6 +129,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> login({
     required String email,
     required String password,
+    bool rememberMe = true,
   }) async {
     try {
       print('🚀 Attempting LOCAL login for: $email');
@@ -137,39 +138,29 @@ class AuthProvider extends ChangeNotifier {
 
       final prefs = await SharedPreferences.getInstance();
 
-      // Check if user exists
       final String? allUsersString = prefs.getString('allUsers');
-      if (allUsersString == null) {
-        throw Exception('user-not-found');
-      }
+      if (allUsersString == null) throw Exception('user-not-found');
 
-      final Map<String, dynamic> allUsers = Map<String, dynamic>.from(
-          json.decode(allUsersString));
-      if (!allUsers.containsKey(email)) {
-        throw Exception('user-not-found');
-      }
+      final Map<String, dynamic> allUsers = Map<String, dynamic>.from(json.decode(allUsersString));
+      if (!allUsers.containsKey(email)) throw Exception('user-not-found');
 
-      // Verify password
-      final userPasswords = Map<String, String>.from(
-          json.decode(prefs.getString('userPasswords') ?? '{}'));
-      if (userPasswords[email] != password) {
-        throw Exception('wrong-password');
-      }
+      final userPasswords = Map<String, String>.from(json.decode(prefs.getString('userPasswords') ?? '{}'));
+      if (userPasswords[email] != password) throw Exception('wrong-password');
 
-      // Load user data
       final userMap = Map<String, dynamic>.from(allUsers[email]);
       _user = UserModel.fromMap(userMap);
       _isAuthenticated = true;
 
-      // Update last login
       _user = _user!.copyWith(lastLoginAt: DateTime.now());
       allUsers[email] = _user!.toMap();
       await prefs.setString('allUsers', json.encode(allUsers));
 
-      // Set as current user
-      await prefs.setString('currentUser', json.encode(_user!.toMap()));
-
-      print('🎉 LOCAL Login completed successfully!');
+      await prefs.setBool('rememberMe', rememberMe);
+      if (rememberMe) {
+        await prefs.setString('currentUser', json.encode(_user!.toMap()));
+      } else {
+        await prefs.remove('currentUser');
+      }
 
       Fluttertoast.showToast(
         msg: 'Welcome back ${_user?.displayName}! 🌸',
@@ -183,11 +174,8 @@ class AuthProvider extends ChangeNotifier {
       print('❌ Login error: $e');
 
       String errorMessage = 'Login failed';
-      if (e.toString().contains('user-not-found')) {
-        errorMessage = 'No account found with this email';
-      } else if (e.toString().contains('wrong-password')) {
-        errorMessage = 'Incorrect password';
-      }
+      if (e.toString().contains('user-not-found')) errorMessage = 'No account found with this email';
+      else if (e.toString().contains('wrong-password')) errorMessage = 'Incorrect password';
 
       Fluttertoast.showToast(
         msg: errorMessage,
@@ -222,14 +210,12 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateProfile(
-      {String? displayName, String? gender, String? dateOfBirth, String? height}) async {
+  Future<void> updateProfile({String? displayName, String? gender, String? dateOfBirth, String? height}) async {
     if (_user == null) return;
 
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Update current user
       _user = _user!.copyWith(
         displayName: displayName ?? _user!.displayName,
         gender: gender ?? _user!.gender,
@@ -237,16 +223,13 @@ class AuthProvider extends ChangeNotifier {
         height: height ?? _user!.height,
       );
 
-      // Update in all users list
       final String? allUsersString = prefs.getString('allUsers');
       if (allUsersString != null) {
-        final Map<String, dynamic> allUsers = Map<String, dynamic>.from(
-            json.decode(allUsersString));
+        final Map<String, dynamic> allUsers = Map<String, dynamic>.from(json.decode(allUsersString));
         allUsers[_user!.email] = _user!.toMap();
         await prefs.setString('allUsers', json.encode(allUsers));
       }
 
-      // Update current user storage
       await prefs.setString('currentUser', json.encode(_user!.toMap()));
 
       Fluttertoast.showToast(
@@ -265,5 +248,4 @@ class AuthProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
-
 }
