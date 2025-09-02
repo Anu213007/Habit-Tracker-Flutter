@@ -4,6 +4,7 @@ import 'package:habit_tracker/providers/auth_provider.dart';
 import 'package:habit_tracker/providers/theme_provider.dart';
 import 'package:habit_tracker/providers/habit_provider.dart';
 import 'package:habit_tracker/providers/quote_provider.dart';
+import 'package:habit_tracker/providers/connectivity_provider.dart';
 import 'package:habit_tracker/screens/splash_screen.dart';
 import 'package:habit_tracker/utils/theme.dart';
 
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => HabitProvider()),
         ChangeNotifierProvider(create: (_) => QuoteProvider()),
