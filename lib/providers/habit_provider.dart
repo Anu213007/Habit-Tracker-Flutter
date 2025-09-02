@@ -43,9 +43,9 @@ class HabitProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final String? habitsJson = prefs.getString('habits');
       if (habitsJson != null) {
-        final List decoded = jsonDecode(habitsJson);
+        final List<dynamic> decoded = jsonDecode(habitsJson);
         _habits = decoded
-            .map((e) => HabitModel.fromMap(Map<String, dynamic>.from(e), e['id']))
+            .map((e) => HabitModel.fromMap(Map<String, dynamic>.from(e)))
             .toList();
       }
       print('✅ Loaded ${_habits.length} habits');
@@ -83,6 +83,7 @@ class HabitProvider extends ChangeNotifier {
         frequency: frequency,
         startDate: startDate,
         notes: notes,
+        createdAt: DateTime.now(),
       );
 
       _habits.insert(0, habit);
