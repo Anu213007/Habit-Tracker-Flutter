@@ -1,18 +1,18 @@
-# 🌸 Habit Tracker - Studio Ghibli Inspired
+# 🌸 Habit Tracker 
 
-A magical habit tracking app built with Flutter, featuring a Studio Ghibli-inspired aesthetic with soft, vintage journal styling. Track your daily habits, visualize progress, and stay motivated with inspirational quotes.
+A beautiful habit tracking app built with Flutter. Track your daily habits, visualize progress, and stay motivated with inspirational quotes.
 
 ## ✨ Features
 
-### 🎨 **Studio Ghibli Aesthetic**
-- **Soft, parchment-like backgrounds** with warm earthy tones
-- **Gentle animations** including floating stars and leaves
-- **Vintage journal styling** with rounded corners and subtle shadows
+### 🎨 Beautiful Design
+- **Soft, pleasant backgrounds** with warm earthy tones
+- **Gentle animations** throughout the interface
+- **Clean styling** with rounded corners and subtle shadows
 - **Light and Dark mode** support
-- **Custom typography** using Sawarabi Mincho and Quicksand fonts
+- **Custom typography** for an elegant look
 
 ### 🔐 **User Authentication**
-- **Firebase Authentication** with email/password
+- **Local authentication** with email/password
 - **User registration** with comprehensive form validation
 - **Session management** using SharedPreferences
 - **Profile management** with editable fields
@@ -27,18 +27,18 @@ A magical habit tracking app built with Flutter, featuring a Studio Ghibli-inspi
 ### 📊 **Progress Visualization**
 - **Interactive charts** showing last 7 days completion
 - **Real-time progress tracking** with visual feedback
-- **Streak counters** with fire emoji indicators
+- **Streak counters** with achievement indicators
 - **Completion rate statistics**
 
 ### 💭 **Motivational Quotes**
 - **Daily inspirational quotes** from public APIs
-- **Favorite quotes system** with Firestore storage
+- **Favorite quotes system** with local storage
 - **Copy to clipboard** functionality
 - **Pull-to-refresh** for new quotes
 
 ### 🌙 **Theme & Customization**
 - **Light/Dark mode toggle** with instant theme switching
-- **Consistent Studio Ghibli color palette** throughout the app
+- **Consistent color palette** throughout the app
 - **Responsive design** for various screen sizes
 - **Smooth animations** and transitions
 
@@ -47,7 +47,6 @@ A magical habit tracking app built with Flutter, featuring a Studio Ghibli-inspi
 ### Prerequisites
 - Flutter 3.0.0 or higher
 - Dart 3.0.0 or higher
-- Firebase project setup
 - Android Studio / VS Code
 
 ### Installation
@@ -63,18 +62,7 @@ A magical habit tracking app built with Flutter, featuring a Studio Ghibli-inspi
    flutter pub get
    ```
 
-3. **Firebase Setup**
-   - Create a new Firebase project at [Firebase Console](https://console.firebase.google.com/)
-   - Enable Authentication (Email/Password)
-   - Enable Firestore Database
-   - Download `google-services.json` (Android) and `GoogleService-Info.plist` (iOS)
-   - Place them in the appropriate platform folders
-
-4. **Configure Firebase Options**
-   - Run `flutterfire configure` to generate Firebase configuration
-   - Or manually update `lib/firebase_options.dart` with your Firebase project details
-
-5. **Run the app**
+3. **Run the app**
    ```bash
    flutter run
    ```
@@ -84,17 +72,16 @@ A magical habit tracking app built with Flutter, featuring a Studio Ghibli-inspi
 ```
 lib/
 ├── main.dart                 # App entry point
-├── firebase_options.dart     # Firebase configuration
 ├── models/                   # Data models
 │   ├── user_model.dart      # User data model
 │   ├── habit_model.dart     # Habit data model
 │   ├── quote_model.dart     # Quote data model
 │   └── mood_model.dart      # Mood tracking model
 ├── providers/                # State management
-│   ├── auth_provider.dart   # Authentication state
-│   ├── theme_provider.dart  # Theme management
-│   ├── habit_provider.dart  # Habit operations
-│   └── quote_provider.dart  # Quote management
+│   ├── auth_provider.dart   # Authentication state (using SharedPreferences)
+│   ├── theme_provider.dart  # Theme management (using SharedPreferences)
+│   ├── habit_provider.dart  # Habit operations (using SharedPreferences)
+│   └── quote_provider.dart  # Quote management (using SharedPreferences)
 ├── screens/                  # App screens
 │   ├── splash_screen.dart   # Welcome screen
 │   ├── login_screen.dart    # User login
@@ -112,44 +99,17 @@ lib/
     └── theme.dart           # App theme configuration
 ```
 
-## 🔧 Configuration
+## 💾 Data Storage
 
-### Firebase Setup
-1. **Authentication Rules** (Firestore)
-   ```javascript
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /users/{userId} {
-         allow read, write: if request.auth != null && request.auth.uid == userId;
-         
-         match /habits/{habitId} {
-           allow read, write: if request.auth != null && request.auth.uid == userId;
-         }
-         
-         match /favorites/quotes/{quoteId} {
-           allow read, write: if request.auth != null && request.auth.uid == userId;
-         }
-         
-         match /moods/{moodId} {
-           allow read, write: if request.auth != null && request.auth.uid == userId;
-         }
-       }
-     }
-   }
-   ```
+This app uses **SharedPreferences** for local data storage:
 
-2. **Authentication Methods**
-   - Enable Email/Password authentication in Firebase Console
-   - Configure password requirements (minimum 8 characters, uppercase, lowercase, number)
+- **User authentication** and session management
+- **User profile data** and preferences
+- **Habit data** with completion history
+- **Favorite quotes** and user preferences
+- **Theme settings** (light/dark mode)
 
-### Environment Variables
-Create a `.env` file in the root directory:
-```env
-FIREBASE_API_KEY=your_api_key
-FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-```
+All data is stored locally on the device, providing fast access and offline functionality.
 
 ## 📱 Screenshots
 
@@ -158,29 +118,27 @@ FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 ## 🎨 Design System
 
 ### Color Palette
-- **Primary**: `#8D6E63` (Warm Brown)
-- **Secondary**: `#A5D6A7` (Sage Green)
-- **Background**: `#FFF5E1` (Parchment)
-- **Card**: `#FFFDF5` (Soft White)
-- **Accent**: `#FFE082` (Soft Yellow)
+- **Primary**: Warm, inviting colors
+- **Secondary**: Complementary accent colors
+- **Background**: Soft, neutral backgrounds
+- **Card**: Clean card designs with subtle shadows
+- **Accent**: Gentle highlight colors
 
 ### Typography
-- **Headings**: Sawarabi Mincho (Japanese serif)
-- **Body**: Quicksand (Modern sans-serif)
+- Clean, readable fonts throughout the app
+- Consistent typography scale for headings and body text
 
 ### Animations
-- **Fade-in effects** with staggered delays
-- **Floating elements** (stars, leaves)
+- **Fade-in effects** with smooth transitions
+- **Gentle animations** on interactive elements
 - **Smooth transitions** between screens
-- **Gentle hover effects** on interactive elements
 
 ## 🔒 Security Features
 
-- **Firebase Authentication** with secure user management
-- **Firestore security rules** for data protection
+- **Local authentication** with email/password validation
 - **Input validation** on all forms
-- **Secure password requirements**
-- **Session management** with automatic logout
+- **Secure password requirements** (minimum 8 characters with uppercase, lowercase, and numbers)
+- **Session management** with automatic logout options
 
 ## 📊 Data Models
 
@@ -203,15 +161,13 @@ class UserModel {
 ```dart
 class HabitModel {
   final String id;
-  final String userId;
   final String title;
-  final HabitCategory category;
-  final HabitFrequency frequency;
-  final DateTime? startDate;
-  final String? notes;
-  final DateTime createdAt;
-  final int currentStreak;
+  final String category;
+  final String frequency;
+  final DateTime creationDate;
+  final int streakCount;
   final List<DateTime> completionHistory;
+  final String? notes;
 }
 ```
 
@@ -247,26 +203,26 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **Studio Ghibli** for the magical aesthetic inspiration
 - **Flutter team** for the amazing framework
-- **Firebase** for the backend services
 - **Open source community** for the various packages used
+- **Public quote APIs** for providing inspirational content
 
 ## 📞 Support
 
 If you have any questions or need help:
 - Create an issue in this repository
-- Contact the development team
-- Check the Firebase documentation
+- Check the Flutter documentation
 
 ## 🔮 Future Enhancements
 
 - [ ] **Mood tracking** with visual mood charts
 - [ ] **Habit reminders** and notifications
-- [ ] **Social features** for sharing progress
 - [ ] **Advanced analytics** and insights
 - [ ] **Custom themes** and personalization
-- [ ] **Offline support** with local caching
-- [ ] **Export functionality** for data backup
+- [ ] **Data export functionality** for backups
 - [ ] **Multi-language support**
+- [ ] **Cloud sync** option for cross-device functionality
 
+---
+
+**Note**: This is a local-only application. All data is stored on your device using SharedPreferences. For cloud backup or multi-device sync, consider implementing a backend service in future versions.
